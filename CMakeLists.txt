@@ -12,6 +12,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # 严格编译选项：任何警告都视为需要修复的问题
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+# ---------------------------------------------------------------- 核心静态库
+add_library(rossim STATIC
+    src/exception.cpp
+    src/logger.cpp
+)
+target_include_directories(rossim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # ---------------------------------------------------------------- 演示程序
 add_executable(ros_demo src/main.cpp)
-target_include_directories(ros_demo PRIVATE include)
+target_link_libraries(ros_demo PRIVATE rossim)
