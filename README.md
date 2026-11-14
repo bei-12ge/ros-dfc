@@ -44,6 +44,39 @@ ros_sim/
 └── scripts/                # 一键构建/测试脚本
 ```
 
+## 在 IDE 中使用
+
+### VS Code（推荐，作业说明中的首选）
+
+1. 装两个扩展：`C/C++`（ms-vscode.cpptools）、`CMake Tools`（ms-vscode.cmake-tools），打开文件夹时 VS Code 也会按 `.vscode/extensions.json` 提示安装；
+2. `文件 → 打开文件夹` 选择 `ros_sim` 根目录（**不要**只打开单个 `.cpp`，否则 CMake 与头文件路径都不生效）；
+3. 底部状态栏选择预设 `release`（日常）或 `debug`（调试），首次会自动配置；
+4. 底部状态栏把 **Launch target** 设为 `ros_demo`，按 `F5` 即可断点调试；改成 `ros_tests` 再按 `F5` 就能单步看测试；
+5. 快捷键：`Ctrl+Shift+B` 构建，`Ctrl+Shift+P → Tasks: Run Task → 运行全部测试 (ctest)` 跑测试。
+
+仓库已内置 `.vscode/tasks.json`、`launch.json`、`c_cpp_properties.json`、`settings.json` 与 `CMakePresets.json`（release / debug / asan 三套预设），无需手动填配置。
+
+### Visual Studio 2022
+
+1. `文件 → 打开 → 文件夹`，选择 `ros_sim` 根目录（VS 原生支持 CMake，会自动读取 `CMakeLists.txt`）；
+2. 等待输出窗口出现 `CMake 配置完成`；若不是，右键 `CMakeLists.txt → 为此文件夹生成缓存`；
+3. 顶部工具栏的启动项下拉框选择 `ros_demo.exe`（或 `ros_tests.exe`），按 `F5` 调试、`Ctrl+F5` 直接运行；
+4. 想切换 Release/Debug：顶部配置下拉框选 `x64-Debug` 或 `x64-Release`。
+
+### CLion
+
+`File → Open` 选择 `CMakeLists.txt`，CLion 自动以 CMake 工程导入；运行配置里选 `ros_demo` 或 `ros_tests` 即可。
+
+### 常见问题
+
+| 现象 | 原因与处理 |
+| --- | --- |
+| 头文件 `ros/ros_sim.h` 报红 | 未以文件夹方式打开，或没配置成功；`C/C++` 扩展会通过 `CMake Tools` 自动取 `include/`，重新配置一次即可 |
+| 提示找不到 `msvc` 生成器 / 无法选择工具链 | Windows 装 “使用 C++ 的桌面开发” 工作负载；或改用 VS Code + MinGW（`CMakePresets.json` 不锁定生成器，会自动适配） |
+| 终端中文乱码 | 文件已是 UTF-8；Windows 旧控制台执行 `chcp 65001`，VS Code 内置终端默认正常 |
+| 运行后看不到 `logs/ros_sim.log` | 工作目录不对。VS Code 的 `launch.json` 已设 `cwd=${workspaceFolder}`；VS 下请把调试工作目录设为工程根目录 |
+| 单文件编译报链接错误 | 本项目是 CMake 多文件工程，必须整体构建，不能只 `g++ main.cpp` |
+
 ## 核心设计要点
 
 1. **`Node` 抽象 + 纯虚 `init/shutdown`**：核心只依赖抽象，`shutdownAll()` 统一关闭所有节点。
