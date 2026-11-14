@@ -145,8 +145,26 @@ int main() {
     expectException("服务处理函数抛异常", [&] { calcClient->call("格式错误的请求"); });
     std::cout << "  以上异常均被捕获，演示继续执行\n\n";
 
-    // ---------------------------------------------------------- 5. 收发统计
-    std::cout << "--- 5. 运行统计 ---\n";
+    // ---------------------------------------------------------- 5. 运行时动态增删节点
+    std::cout << "--- 5. 运行时动态增删节点 ---\n";
+    auto hotplugSubscriber = std::make_unique<Subscriber>("sub_hotplug", "sensor/temperature");
+    hotplugSubscriber->init();
+    tempPublisher->publish("30.0");
+    std::cout << "  动态加入 sub_hotplug 后，其接收数: " << hotplugSubscriber->receivedCount()
+              << " 条\n";
+    const size_t beforeRemove = hotplugSubscriber->receivedCount();
+    ROS::instance().removeNode("sub_hotplug");
+    tempPublisher->publish("31.0");
+    std::cout << "  removeNode 后再发布一条，其接收数仍为: "
+              << hotplugSubscriber->receivedCount() << " 条（删除前 " << beforeRemove << " 条）\n";
+    std::cout << "  剩余节点: ";
+    for (const auto& name : ROS::instance().nodeNames()) {
+        std::cout << name << "  ";
+    }
+    std::cout << "\n\n";
+
+    // ---------------------------------------------------------- 6. 收发统计
+    std::cout << "--- 6. 运行统计 ---\n";
     std::cout << "  pub_temp 累计发布: " << tempPublisher->publishedCount() << " 条\n";
     std::cout << "  sub_monitor_a 累计接收: " << monitorA->receivedCount() << " 条\n";
     std::cout << "  sub_monitor_b 累计接收: " << monitorB->receivedCount() << " 条\n";
@@ -158,8 +176,8 @@ int main() {
     }
     std::cout << "\n\n";
 
-    // ---------------------------------------------------------- 6. 全局关闭
-    std::cout << "--- 6. 全局关闭 ---\n";
+    // ---------------------------------------------------------- 7. 全局关闭
+    std::cout << "--- 7. 全局关闭 ---\n";
     ROS::instance().shutdownAll();
 
     expectException("对已关闭节点发布", [&] { tempPublisher->publish("after shutdown"); });
