@@ -39,4 +39,24 @@ private:
     std::string timestamp_;
 };
 
+// ---------------------------------------------------------------------------
+// 自定义消息类型：传感器数据（加分项 FR-07.1）
+//   * 在字符串内容之外扩展温度、湿度两个业务字段；
+//   * 通过覆盖 typeName()/toString() 参与路由与日志，核心转发层无需任何改动。
+// ---------------------------------------------------------------------------
+class SensorMessage : public Message {
+public:
+    SensorMessage(const std::string& content, double temperature, double humidity);
+
+    double temperature() const noexcept { return temperature_; }
+    double humidity() const noexcept { return humidity_; }
+
+    std::string typeName() const override;
+    std::string toString() const override;
+
+private:
+    double temperature_;
+    double humidity_;
+};
+
 }  // namespace ros_sim

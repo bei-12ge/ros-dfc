@@ -84,6 +84,12 @@ int main() {
     }
     statusPublisher->publish("battery=87%, mode=auto");
     statusPublisher->publish("battery=85%, mode=auto");
+
+    // 自定义消息类型：传感器数据（温度/湿度 + 时间戳），核心转发层无需感知具体类型
+    const auto sensorMessage = std::make_shared<const SensorMessage>("温湿度采样", 26.5, 61.2);
+    const size_t sensorDelivered = tempPublisher->publish(sensorMessage);
+    std::cout << "  自定义 SensorMessage（" << sensorMessage->typeName() << "）发布，送达 "
+              << sensorDelivered << " 个订阅者\n";
     std::cout << "\n";
 
     // ---------------------------------------------------------- 3. 异常演示

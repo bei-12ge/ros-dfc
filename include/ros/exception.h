@@ -91,6 +91,8 @@ public:
     static MessageException emptyContent();
     /// MSG-002 消息对象为空指针（ERROR）
     static MessageException nullMessage();
+    /// MSG-003 传感器数值超出合理量程（ERROR）
+    static MessageException invalidSensorValue(const std::string& field, double value);
 };
 
 // ---------------------------------------------------------------------------

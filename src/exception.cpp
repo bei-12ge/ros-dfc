@@ -63,6 +63,11 @@ MessageException MessageException::nullMessage() {
     return MessageException("MSG-002", "消息对象为空指针，无法转发");
 }
 
+MessageException MessageException::invalidSensorValue(const std::string& field, double value) {
+    return MessageException("MSG-003", "传感器数值超出合理量程: " + field + "=" +
+                                            std::to_string(value));
+}
+
 // ---------------------------------------------------------------- 服务
 ServiceException::ServiceException(std::string code, const std::string& message, LogLevel level)
     : RosException("SERVICE", std::move(code), level, message) {}
