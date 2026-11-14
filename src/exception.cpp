@@ -85,4 +85,16 @@ ServiceException ServiceException::clientNotRunning(const std::string& client) {
     return ServiceException("SERVICE-003", "客户端未初始化即调用服务: " + client);
 }
 
+ServiceException ServiceException::emptyName() {
+    return ServiceException("SERVICE-004", "服务名称不能为空或全为空白字符");
+}
+
+ServiceException ServiceException::emptyHandler(const std::string& service) {
+    return ServiceException("SERVICE-005", "服务处理函数为空: " + service);
+}
+
+ServiceException ServiceException::duplicateService(const std::string& service) {
+    return ServiceException("SERVICE-006", "服务名称重复注册: " + service);
+}
+
 }  // namespace ros_sim

@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 using namespace ros_sim;
@@ -33,6 +34,15 @@ void expectException(const std::string& label, Action&& action) {
         std::cout << "  [已拦截] " << label << " → " << ex.code() << " / " << ex.what() << "\n";
         Logger::instance().logException(ex);
     }
+}
+
+/// 格式化数字（保留两位小数），用于服务响应展示
+std::string formatNumber(double value) {
+    std::ostringstream oss;
+    oss.setf(std::ios::fixed);
+    oss.precision(2);
+    oss << value;
+    return oss.str();
 }
 
 void printBanner() {
@@ -92,8 +102,29 @@ int main() {
               << sensorDelivered << " 个订阅者\n";
     std::cout << "\n";
 
-    // ---------------------------------------------------------- 3. 异常演示
-    std::cout << "--- 3. 非法操作拦截（进程必须存活）---\n";
+    // ---------------------------------------------------------- 3. 服务/客户端
+    std::cout << "--- 3. 服务 / 客户端同步通信（一问一答）---\n";
+    // 服务端：解析 "a,b" 并返回和；格式错误时抛异常，由服务层包装为 SERVICE-002
+    auto calcServer = std::make_unique<ServiceServer>(
+        "srv_calc", "service/calc_add", [](const std::string& request) -> std::string {
+            const auto comma = request.find(',');
+            if (comma == std::string::npos) {
+                throw std::invalid_argument("请求格式应为 \"a,b\"");
+            }
+            const double a = std::stod(request.substr(0, comma));
+            const double b = std::stod(request.substr(comma + 1));
+            return formatNumber(a + b);
+        });
+    auto calcClient = std::make_unique<ServiceClient>("cli_calc", "service/calc_add");
+    calcServer->init();
+    calcClient->init();
+    std::cout << "  cli_calc 调用 service/calc_add(\"1.5,2.5\") → "
+              << calcClient->call("1.5,2.5") << "（同步阻塞，直接拿到结果）\n";
+    std::cout << "  cli_calc 调用 service/calc_add(\"10,0.25\") → "
+              << calcClient->call("10,0.25") << "\n";
+
+    // ---------------------------------------------------------- 4. 异常演示
+    std::cout << "--- 4. 非法操作拦截（进程必须存活）---\n";
     expectException("空节点名", [] { Publisher bad("   ", "topic"); });
     expectException("重复节点名注册", [&] { Subscriber duplicate("pub_temp", "sensor/temperature"); duplicate.init(); });
     expectException("空消息内容发布", [&] { tempPublisher->publish(""); });
@@ -106,22 +137,29 @@ int main() {
         tempPublisher->publish(nullMessage);
     });
     expectException("空话题名", [] { Subscriber bad("sub_bad", " "); });
+    expectException("调用不存在的服务", [] {
+        ServiceClient ghost("cli_ghost", "service/not_exist");
+        ghost.init();
+        ghost.call("ping");
+    });
+    expectException("服务处理函数抛异常", [&] { calcClient->call("格式错误的请求"); });
     std::cout << "  以上异常均被捕获，演示继续执行\n\n";
 
-    // ---------------------------------------------------------- 4. 收发统计
-    std::cout << "--- 4. 运行统计 ---\n";
+    // ---------------------------------------------------------- 5. 收发统计
+    std::cout << "--- 5. 运行统计 ---\n";
     std::cout << "  pub_temp 累计发布: " << tempPublisher->publishedCount() << " 条\n";
     std::cout << "  sub_monitor_a 累计接收: " << monitorA->receivedCount() << " 条\n";
     std::cout << "  sub_monitor_b 累计接收: " << monitorB->receivedCount() << " 条\n";
     std::cout << "  sub_dashboard 累计接收: " << dashBoard->receivedCount() << " 条\n";
+    std::cout << "  srv_calc 累计处理请求: " << calcServer->handledCount() << " 个\n";
     std::cout << "  话题列表: ";
     for (const auto& topic : ROS::instance().topics()) {
         std::cout << topic << "  ";
     }
     std::cout << "\n\n";
 
-    // ---------------------------------------------------------- 5. 全局关闭
-    std::cout << "--- 5. 全局关闭 ---\n";
+    // ---------------------------------------------------------- 6. 全局关闭
+    std::cout << "--- 6. 全局关闭 ---\n";
     ROS::instance().shutdownAll();
 
     expectException("对已关闭节点发布", [&] { tempPublisher->publish("after shutdown"); });

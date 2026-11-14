@@ -7,6 +7,7 @@
 #include "ros/message.h"
 #include "ros/node.h"
 #include "ros/publisher.h"
+#include "ros/service.h"
 #include "ros/subscriber.h"
 #include "ros/util.h"
 
@@ -25,6 +26,7 @@ ROS::~ROS() {
     nodes_.clear();
     publishers_.clear();
     subscribers_.clear();
+    services_.clear();
 }
 
 // ---------------------------------------------------------------- 注册
@@ -67,6 +69,21 @@ void ROS::registerSubscriber(Subscriber& subscriber) {
                                      ", 该话题订阅者数=" + std::to_string(slot.size()));
 }
 
+void ROS::registerService(ServiceServer& service) {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (shutdown_) {
+        throw RosException("ROS", "ROS-001", LogLevel::ERROR,
+                           "系统已关闭，拒绝注册服务端: " + service.name());
+    }
+    if (services_.find(service.serviceName()) != services_.end()) {
+        throw ServiceException::duplicateService(service.serviceName());
+    }
+    registerNodeUnlocked(service);
+    services_.emplace(service.serviceName(), &service);
+    Logger::instance().info("ROS", "注册服务端: 节点=" + service.name() +
+                                     ", 服务=" + service.serviceName());
+}
+
 void ROS::unregisterNode(const std::string& name) {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -86,6 +103,9 @@ void ROS::unregisterNode(const std::string& name) {
                                  [&name](const Subscriber* s) { return s->name() == name; }),
                   vec.end());
         it = vec.empty() ? subscribers_.erase(it) : std::next(it);
+    }
+    for (auto it = services_.begin(); it != services_.end();) {
+        it = (it->second->name() == name) ? services_.erase(it) : std::next(it);
     }
 }
 
@@ -125,6 +145,23 @@ size_t ROS::publish(const std::string& topic, const std::shared_ptr<const Messag
 }
 
 // ---------------------------------------------------------------- 生命周期
+std::string ROS::callService(const std::string& serviceName, const std::string& request) {
+    if (isBlank(serviceName)) {
+        throw ServiceException::emptyName();
+    }
+    ServiceServer* server = nullptr;
+    {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        const auto it = services_.find(serviceName);
+        if (it == services_.end()) {
+            throw ServiceException::notFound(serviceName);
+        }
+        server = it->second;
+    }
+    // 锁外执行处理函数：服务处理中可能再次发布话题或调用其他服务
+    return server->handle(request);
+}
+
 void ROS::shutdownAll() {
     std::vector<Node*> snapshot;
     {
@@ -165,6 +202,7 @@ void ROS::reset() {
     nodes_.clear();
     publishers_.clear();
     subscribers_.clear();
+    services_.clear();
     shutdown_ = false;
 }
 
@@ -231,6 +269,28 @@ size_t ROS::subscriberCount(const std::string& topic) const {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     const auto it = subscribers_.find(topic);
     return it == subscribers_.end() ? 0 : it->second.size();
+}
+
+std::vector<std::string> ROS::serviceNames() const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::vector<std::string> names;
+    names.reserve(services_.size());
+    for (const auto& entry : services_) {
+        names.push_back(entry.first);
+    }
+    std::sort(names.begin(), names.end());
+    return names;
+}
+
+size_t ROS::serviceCount() const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return services_.size();
+}
+
+const ServiceServer* ROS::findService(const std::string& serviceName) const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    const auto it = services_.find(serviceName);
+    return it == services_.end() ? nullptr : it->second;
 }
 
 const Node* ROS::findNode(const std::string& name) const {

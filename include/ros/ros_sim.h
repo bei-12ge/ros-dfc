@@ -8,6 +8,7 @@
 #include "ros/node.h"
 #include "ros/publisher.h"
 #include "ros/ros.h"
+#include "ros/service.h"
 #include "ros/subscriber.h"
 #include "ros/timestamp.h"
 #include "ros/util.h"

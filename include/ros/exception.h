@@ -109,6 +109,12 @@ public:
     static ServiceException handlerFailed(const std::string& service, const std::string& reason);
     /// SERVICE-003 客户端未初始化即调用（ERROR）
     static ServiceException clientNotRunning(const std::string& client);
+    /// SERVICE-004 服务名称为空（ERROR）
+    static ServiceException emptyName();
+    /// SERVICE-005 服务处理函数为空（ERROR）
+    static ServiceException emptyHandler(const std::string& service);
+    /// SERVICE-006 服务名重复注册（ERROR）
+    static ServiceException duplicateService(const std::string& service);
 };
 
 }  // namespace ros_sim
