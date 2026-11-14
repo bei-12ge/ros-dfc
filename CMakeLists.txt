@@ -16,6 +16,11 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 add_library(rossim STATIC
     src/exception.cpp
     src/logger.cpp
+    src/message.cpp
+    src/node.cpp
+    src/publisher.cpp
+    src/subscriber.cpp
+    src/ros.cpp
 )
 target_include_directories(rossim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
