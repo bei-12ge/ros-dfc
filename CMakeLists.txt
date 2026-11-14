@@ -28,3 +28,18 @@ target_include_directories(rossim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # ---------------------------------------------------------------- 演示程序
 add_executable(ros_demo src/main.cpp)
 target_link_libraries(ros_demo PRIVATE rossim)
+
+# ---------------------------------------------------------------- 测试
+enable_testing()
+add_executable(ros_tests
+    tests/test_main.cpp
+    tests/test_message.cpp
+    tests/test_node.cpp
+    tests/test_ros.cpp
+    tests/test_bonus.cpp
+)
+target_link_libraries(ros_tests PRIVATE rossim)
+target_include_directories(ros_tests PRIVATE tests)
+add_test(NAME ros_tests COMMAND ros_tests)
+# 测试运行时的日志/临时文件统一放在构建目录下的 logs/
+set_tests_properties(ros_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

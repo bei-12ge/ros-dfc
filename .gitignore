@@ -3,3 +3,4 @@ logs/
 *.o
 *.log
 .DS_Store
+build-asan/
