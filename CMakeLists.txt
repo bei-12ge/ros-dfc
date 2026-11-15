@@ -10,7 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # 严格编译选项：任何警告都视为需要修复的问题
-add_compile_options(-Wall -Wextra -Wpedantic)
+# MSVC（Visual Studio / CLion 的 Visual Studio 工具链）不认识 -Wall，需按编译器分支
+if(MSVC)
+    add_compile_options(/W4 /permissive- /utf-8)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # ---------------------------------------------------------------- 核心静态库
 add_library(rossim STATIC

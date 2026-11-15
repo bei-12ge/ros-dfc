@@ -73,7 +73,14 @@ ros_sim/
 
 ### CLion
 
-`File → Open` 选择 `CMakeLists.txt`，CLion 自动以 CMake 工程导入；运行配置里选 `ros_demo` 或 `ros_tests` 即可。
+1. `File → Open` 选择 `ros_sim` **文件夹**（或直接选 `CMakeLists.txt`），CLion 会以 CMake 工程导入并自动配置；右下角提示 `CMake project loaded successfully` 即成功；
+2. 右上角运行配置下拉框里会自动出现 `ros_demo` 和 `ros_tests` 两个目标，选 `ros_demo` 点绿色三角（`Shift+F10`）运行，选 `ros_tests` 运行测试；
+3. 断点调试：选 `ros_demo` 点虫子图标（`Shift+F9`）；
+4. 工具链要求：`Settings → Build, Execution, Deployment → Toolchains` 里要有一个可用的 C++ 工具链——Linux 用系统 GCC、macOS 用 Xcode CLT、Windows 用 MinGW-w64 或 Visual Studio（**不要**旧的 Cygwin）；
+5. 若 CLion 版本低于 2022.3，不会读取 `CMakePresets.json`，会用自己的 `cmake-build-debug` 配置，同样能编译运行，不影响；
+6. 工作目录：CLion 默认在构建目录下运行，日志会写到 `cmake-build-debug/logs/`。想让它落在工程根目录，在 `Run → Edit Configurations` 里把 `Working directory` 改成 `$ProjectFileDir$`。
+
+> Windows 上的两点提醒：本工程只用了标准库，但 `std::filesystem` 在 MinGW 里需要 gcc 8 以上；CMakeLists 已按编译器分支设置警告选项（MSVC 用 `/W4 /utf-8`，GCC/Clang 用 `-Wall -Wextra -Wpedantic`），因此 MSVC 工具链也能零警告编译。
 
 ### 常见问题
 
