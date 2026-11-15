@@ -1,0 +1,168 @@
+
+============================================================
+  ros_sim —— C++ 模拟 ROS 节点系统演示
+  多发布者 / 多订阅者 / 话题路由 / 异常拦截 / 日志落盘
+============================================================
+
+--- 1. 创建节点并初始化 ---
+[2026-11-15 10:38:22][INFO][ROS] 注册发布者: 节点=pub_temp, 话题=sensor/temperature, 该话题发布者数=1
+[2026-11-15 10:38:22][INFO][PUB] 发布者节点初始化完成: 节点=pub_temp, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 注册发布者: 节点=pub_status, 话题=robot/status, 该话题发布者数=1
+[2026-11-15 10:38:22][INFO][PUB] 发布者节点初始化完成: 节点=pub_status, 话题=robot/status
+[2026-11-15 10:38:22][INFO][ROS] 注册订阅者: 节点=sub_monitor_a, 话题=sensor/temperature, 该话题订阅者数=1
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点初始化完成: 节点=sub_monitor_a, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 注册订阅者: 节点=sub_monitor_b, 话题=sensor/temperature, 该话题订阅者数=2
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点初始化完成: 节点=sub_monitor_b, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 注册订阅者: 节点=sub_dashboard, 话题=robot/status, 该话题订阅者数=1
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点初始化完成: 节点=sub_dashboard, 话题=robot/status
+  当前节点: pub_status  pub_temp  sub_dashboard  sub_monitor_a  sub_monitor_b  
+
+--- 2. 发布者连续发布（无需等待订阅者应答）---
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='21.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=21.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 21.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=21.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 21.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='22.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=22.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 22.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=22.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 22.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='23.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=23.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 23.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=23.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 23.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='24.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=24.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 24.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=24.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 24.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='25.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=25.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 25.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=25.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 25.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='26.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=26.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 26.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=26.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 26.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='27.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=27.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 27.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=27.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 27.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='28.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=28.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 28.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=28.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 28.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='29.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=29.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 29.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=29.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 29.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='30.5', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=30.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 30.5
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=30.5, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  pub_temp 发布 30.5℃，送达订阅者 2 个
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_status, 话题=robot/status, std_msgs/String{内容='battery=87%, mode=auto', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_dashboard 收到消息: 内容=battery=87%, mode=auto, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=robot/status
+[2026-11-15 10:38:22][INFO][CALLBACK] 看板 业务回调收到: battery=87%, mode=auto
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=robot/status, 送达订阅者数=1
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_status, 话题=robot/status, std_msgs/String{内容='battery=85%, mode=auto', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_dashboard 收到消息: 内容=battery=85%, mode=auto, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=robot/status
+[2026-11-15 10:38:22][INFO][CALLBACK] 看板 业务回调收到: battery=85%, mode=auto
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=robot/status, 送达订阅者数=1
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, sensor_msgs/SensorData{温度=26.5℃, 湿度=61.2%, 内容='温湿度采样', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=温湿度采样, 时间戳=2026-11-15 10:38:22, 类型=sensor_msgs/SensorData, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 温湿度采样
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=温湿度采样, 时间戳=2026-11-15 10:38:22, 类型=sensor_msgs/SensorData, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  自定义 SensorMessage（sensor_msgs/SensorData）发布，送达 2 个订阅者
+
+--- 3. 服务 / 客户端同步通信（一问一答）---
+[2026-11-15 10:38:22][INFO][ROS] 注册服务端: 节点=srv_calc, 服务=service/calc_add
+[2026-11-15 10:38:22][INFO][SERVICE] 服务端节点初始化完成: 节点=srv_calc, 服务=service/calc_add
+[2026-11-15 10:38:22][INFO][SERVICE] 客户端节点初始化完成: 节点=cli_calc, 服务=service/calc_add
+[2026-11-15 10:38:22][INFO][SERVICE] 收到服务请求: 服务=service/calc_add, 请求=1.5,2.5
+[2026-11-15 10:38:22][INFO][SERVICE] 服务响应完成: 服务=service/calc_add, 响应=4.00
+[2026-11-15 10:38:22][INFO][SERVICE] 客户端调用完成: 节点=cli_calc, 服务=service/calc_add, 请求=1.5,2.5, 响应=4.00, 耗时=9us
+  cli_calc 调用 service/calc_add("1.5,2.5") → 4.00（同步阻塞，直接拿到结果）
+[2026-11-15 10:38:22][INFO][SERVICE] 收到服务请求: 服务=service/calc_add, 请求=10,0.25
+[2026-11-15 10:38:22][INFO][SERVICE] 服务响应完成: 服务=service/calc_add, 响应=10.25
+[2026-11-15 10:38:22][INFO][SERVICE] 客户端调用完成: 节点=cli_calc, 服务=service/calc_add, 请求=10,0.25, 响应=10.25, 耗时=3us
+  cli_calc 调用 service/calc_add("10,0.25") → 10.25
+--- 4. 非法操作拦截（进程必须存活）---
+  [已拦截] 空节点名 → NODE-001 / 节点名称不能为空或全为空白字符
+[2026-11-15 10:38:22][ERROR][NODE] [NODE-001] 节点名称不能为空或全为空白字符
+  [已拦截] 重复节点名注册 → NODE-002 / 节点名称重复注册: pub_temp
+[2026-11-15 10:38:22][ERROR][NODE] [NODE-002] 节点名称重复注册: pub_temp
+  [已拦截] 空消息内容发布 → MSG-001 / 消息内容不能为空或全为空白字符
+[2026-11-15 10:38:22][ERROR][MSG] [MSG-001] 消息内容不能为空或全为空白字符
+  [已拦截] 向不存在的话题转发 → TOPIC-002 / 话题不存在，无法转发消息: topic/not_exist
+[2026-11-15 10:38:22][WARN][TOPIC] [TOPIC-002] 话题不存在，无法转发消息: topic/not_exist
+  [已拦截] 发布空消息对象 → MSG-002 / 消息对象为空指针，无法转发
+[2026-11-15 10:38:22][ERROR][MSG] [MSG-002] 消息对象为空指针，无法转发
+  [已拦截] 空话题名 → TOPIC-001 / 话题名称不能为空或全为空白字符
+[2026-11-15 10:38:22][ERROR][TOPIC] [TOPIC-001] 话题名称不能为空或全为空白字符
+[2026-11-15 10:38:22][INFO][SERVICE] 客户端节点初始化完成: 节点=cli_ghost, 服务=service/not_exist
+  [已拦截] 调用不存在的服务 → SERVICE-001 / 服务未注册: service/not_exist
+[2026-11-15 10:38:22][WARN][SERVICE] [SERVICE-001] 服务未注册: service/not_exist
+[2026-11-15 10:38:22][INFO][SERVICE] 收到服务请求: 服务=service/calc_add, 请求=格式错误的请求
+  [已拦截] 服务处理函数抛异常 → SERVICE-002 / 服务处理失败 [service/calc_add]: 请求格式应为 "a,b"
+[2026-11-15 10:38:22][ERROR][SERVICE] [SERVICE-002] 服务处理失败 [service/calc_add]: 请求格式应为 "a,b"
+  以上异常均被捕获，演示继续执行
+
+--- 5. 运行时动态增删节点 ---
+[2026-11-15 10:38:22][INFO][ROS] 注册订阅者: 节点=sub_hotplug, 话题=sensor/temperature, 该话题订阅者数=3
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点初始化完成: 节点=sub_hotplug, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='30.0', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=30.0, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 30.0
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=30.0, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_hotplug 收到消息: 内容=30.0, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=3
+  动态加入 sub_hotplug 后，其接收数: 1 条
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点已关闭: 节点=sub_hotplug, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 运行时删除节点完成: sub_hotplug
+[2026-11-15 10:38:22][INFO][PUB] 发布消息: 节点=pub_temp, 话题=sensor/temperature, std_msgs/String{内容='31.0', 时间戳='2026-11-15 10:38:22'}
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_a 收到消息: 内容=31.0, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][CALLBACK] 监视器A 业务回调收到: 31.0
+[2026-11-15 10:38:22][INFO][SUB] [接收] 节点=sub_monitor_b 收到消息: 内容=31.0, 时间戳=2026-11-15 10:38:22, 类型=std_msgs/String, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 消息转发完成: 话题=sensor/temperature, 送达订阅者数=2
+  removeNode 后再发布一条，其接收数仍为: 1 条（删除前 1 条）
+  剩余节点: pub_status  pub_temp  srv_calc  sub_dashboard  sub_monitor_a  sub_monitor_b  
+
+--- 6. 运行统计 ---
+  pub_temp 累计发布: 13 条
+  sub_monitor_a 累计接收: 13 条
+  sub_monitor_b 累计接收: 13 条
+  sub_dashboard 累计接收: 2 条
+  srv_calc 累计处理请求: 2 个
+  话题列表: robot/status  sensor/temperature  
+
+--- 7. 全局关闭 ---
+[2026-11-15 10:38:22][INFO][SERVICE] 服务端节点已关闭: 节点=srv_calc, 服务=service/calc_add
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点已关闭: 节点=sub_dashboard, 话题=robot/status
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点已关闭: 节点=sub_monitor_b, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][SUB] 订阅者节点已关闭: 节点=sub_monitor_a, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][PUB] 发布者节点已关闭: 节点=pub_status, 话题=robot/status
+[2026-11-15 10:38:22][INFO][PUB] 发布者节点已关闭: 节点=pub_temp, 话题=sensor/temperature
+[2026-11-15 10:38:22][INFO][ROS] 系统全局关闭完成，共关闭 6 个节点
+  [已拦截] 对已关闭节点发布 → NODE-003 / 节点不存在或已关闭: pub_temp
+[2026-11-15 10:38:22][WARN][NODE] [NODE-003] 节点不存在或已关闭: pub_temp
+
+演示结束。详细日志见 logs/ros_sim.log

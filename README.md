@@ -14,6 +14,14 @@ cd build && ./ros_tests # 结构化测试（48 用例 / 114 断言）
 
 或直接使用脚本：`./scripts/build_and_run.sh`、`./scripts/run_tests.sh`。
 
+## 运行效果
+
+![启动与消息收发](docs/img/运行效果-a.png)
+
+![服务调用、异常拦截与全局关闭](docs/img/运行效果-b.png)
+
+完整原始输出见 `docs/运行效果示例.txt`（168 行，由 `./build/ros_demo` 实际运行捕获）。
+
 ## 验证结果
 
 | 项 | 结果 |

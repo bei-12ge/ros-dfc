@@ -118,10 +118,12 @@ int main() {
     auto calcClient = std::make_unique<ServiceClient>("cli_calc", "service/calc_add");
     calcServer->init();
     calcClient->init();
-    std::cout << "  cli_calc 调用 service/calc_add(\"1.5,2.5\") → "
-              << calcClient->call("1.5,2.5") << "（同步阻塞，直接拿到结果）\n";
-    std::cout << "  cli_calc 调用 service/calc_add(\"10,0.25\") → "
-              << calcClient->call("10,0.25") << "\n";
+    // 先拿到结果再打印：避免调用过程中产生的日志插到这一行中间
+    const std::string sum1 = calcClient->call("1.5,2.5");
+    std::cout << "  cli_calc 调用 service/calc_add(\"1.5,2.5\") → " << sum1
+              << "（同步阻塞，直接拿到结果）\n";
+    const std::string sum2 = calcClient->call("10,0.25");
+    std::cout << "  cli_calc 调用 service/calc_add(\"10,0.25\") → " << sum2 << "\n";
 
     // ---------------------------------------------------------- 4. 异常演示
     std::cout << "--- 4. 非法操作拦截（进程必须存活）---\n";
