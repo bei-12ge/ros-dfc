@@ -10,6 +10,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+// windows.h 里定义了同名宏 ERROR（值为 0），会把本文件后面所有
+// LogLevel::ERROR 直接替换成 LogLevel::0，导致编译报
+// "expected unqualified-id before numeric constant"。
+// 因此包含之后立刻取消这个宏，只保留我们自定义枚举里的 ERROR。
+#ifdef ERROR
+#undef ERROR
+#endif
 #endif
 
 namespace ros_sim {
