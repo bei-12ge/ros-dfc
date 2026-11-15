@@ -47,7 +47,7 @@ public:
     void logException(const RosException& ex);
 
 private:
-    Logger() = default;
+    Logger();
     ~Logger();
 
     bool shouldLog(LogLevel level) const noexcept;

@@ -88,7 +88,8 @@ ros_sim/
 | --- | --- |
 | 头文件 `ros/ros_sim.h` 报红 | 未以文件夹方式打开，或没配置成功；`C/C++` 扩展会通过 `CMake Tools` 自动取 `include/`，重新配置一次即可 |
 | 提示找不到 `msvc` 生成器 / 无法选择工具链 | Windows 装 “使用 C++ 的桌面开发” 工作负载；或改用 VS Code + MinGW（`CMakePresets.json` 不锁定生成器，会自动适配） |
-| 终端中文乱码 | 文件已是 UTF-8；Windows 旧控制台执行 `chcp 65001`，VS Code 内置终端默认正常 |
+| 终端中文乱码 | 程序启动时已调用 `SetConsoleOutputCP(CP_UTF8)` 把 Windows 控制台切到 UTF-8，源码与日志都是 UTF-8，正常情况下不会再乱。若 IDE 仍显示乱码，是 IDE 自己的解码问题：CLion 在 `Help → Edit Custom VM Options` 加一行 `-Dfile.encoding=UTF-8` 后重启；旧版控制台可手动 `chcp 65001` |
+| ERROR 日志跑到最前面、与正常输出错位 | 已修复：日志写 stderr 前先 flush stdout、写完立即 flush。若用旧版本代码仍出现，是把 stdout/stderr 重定向到同一文件再合并显示造成的，属预期 |
 | 运行后看不到 `logs/ros_sim.log` | 工作目录不对。VS Code 的 `launch.json` 已设 `cwd=${workspaceFolder}`；VS 下请把调试工作目录设为工程根目录 |
 | 单文件编译报链接错误 | 本项目是 CMake 多文件工程，必须整体构建，不能只 `g++ main.cpp` |
 

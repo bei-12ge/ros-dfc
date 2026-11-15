@@ -2,7 +2,27 @@
 
 #include <iostream>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 namespace ros_sim {
+
+Logger::Logger() {
+#ifdef _WIN32
+    // Windows 控制台默认按本地代码页（简体中文为 GBK/936）解码，
+    // 而源文件与日志内容都是 UTF-8，不切换代码页中文会整段乱码。
+    // 这里把控制台输入、输出代码页统一设为 UTF-8。
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
+}
 
 Logger& Logger::instance() {
     static Logger logger;
@@ -71,8 +91,17 @@ void Logger::log(LogLevel level, const std::string& module, const std::string& m
         "[" + nowTimestamp() + "][" + toString(level) + "][" + module + "] " + message;
 
     if (console_) {
-        // 错误走 std::cerr，便于 shell 重定向区分告警与正常输出
-        (level == LogLevel::ERROR ? std::cerr : std::cout) << line << '\n';
+        // 错误走 std::cerr，便于 shell 重定向区分告警与正常输出。
+        // 两条流各自缓冲，若不逐行刷新，Windows 下 ERROR 会抢先打印、
+        // 与正常输出交错错位；因此写之前先冲掉 cout，写完立即 flush。
+        if (level == LogLevel::ERROR) {
+            std::cout.flush();
+            std::cerr << line << '\n';
+            std::cerr.flush();
+        } else {
+            std::cout << line << '\n';
+            std::cout.flush();
+        }
     }
     if (file_.is_open()) {
         file_ << line << '\n';
