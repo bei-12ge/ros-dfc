@@ -85,6 +85,29 @@ bool Logger::hasFileSink() const {
     return file_.is_open();
 }
 
+void Logger::enableCapture(bool enabled) {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    capture_ = enabled;
+    if (!enabled) {
+        captured_.clear();
+    }
+}
+
+bool Logger::capturing() const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return capture_;
+}
+
+std::vector<std::string> Logger::capturedLines() const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return captured_;
+}
+
+void Logger::clearCapture() {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    captured_.clear();
+}
+
 bool Logger::shouldLog(LogLevel level) const noexcept {
     return static_cast<int>(level) >= static_cast<int>(level_);
 }
@@ -113,6 +136,12 @@ void Logger::log(LogLevel level, const std::string& module, const std::string& m
     if (file_.is_open()) {
         file_ << line << '\n';
         file_.flush();  // 立即落盘：进程异常退出时也不丢关键日志
+    }
+    if (capture_) {
+        if (captured_.size() >= kMaxCapturedLines) {
+            captured_.erase(captured_.begin(), captured_.begin() + kMaxCapturedLines / 8);
+        }
+        captured_.push_back(line);
     }
 }
 

@@ -28,6 +28,7 @@ add_library(rossim STATIC
     src/subscriber.cpp
     src/ros.cpp
     src/service.cpp
+    src/report.cpp
 )
 target_include_directories(rossim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

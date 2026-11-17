@@ -8,6 +8,7 @@
 #include <fstream>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "ros/exception.h"
 #include "ros/timestamp.h"
@@ -36,6 +37,15 @@ public:
     /// 是否已挂载文件输出
     bool hasFileSink() const;
 
+    /// 开启/关闭内存捕获（供运行可视化报告使用，默认关闭）
+    void enableCapture(bool enabled);
+    /// 是否正在捕获
+    bool capturing() const;
+    /// 取出捕获到的原始日志行（拷贝，线程安全）
+    std::vector<std::string> capturedLines() const;
+    /// 清空捕获缓冲
+    void clearCapture();
+
     /// 通用写日志入口
     void log(LogLevel level, const std::string& module, const std::string& message);
 
@@ -56,6 +66,10 @@ private:
     LogLevel level_ = LogLevel::INFO;
     bool console_ = true;
     std::ofstream file_;
+
+    bool capture_ = false;
+    std::vector<std::string> captured_;
+    static constexpr size_t kMaxCapturedLines = 8192;  // 上限，防止长时间运行占满内存
 };
 
 }  // namespace ros_sim

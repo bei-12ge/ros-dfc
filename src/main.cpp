@@ -6,7 +6,9 @@
 //   4) 全局关闭，日志落盘
 // ---------------------------------------------------------------------------
 #include "ros/ros_sim.h"
+#include "ros/report.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -59,6 +61,7 @@ int main() {
     logger.setLevel(LogLevel::INFO);
     std::filesystem::create_directories("logs");
     logger.addFileSink("logs/ros_sim.log");
+    logger.enableCapture(true);  // 内存捕获，供运行结束时的可视化报告使用
 
     printBanner();
 
@@ -183,6 +186,20 @@ int main() {
     ROS::instance().shutdownAll();
 
     expectException("对已关闭节点发布", [&] { tempPublisher->publish("after shutdown"); });
+
+    // ---------------------------------------------------------- 8. 可视化报告
+    std::cout << "\n--- 8. 生成运行可视化报告 ---\n";
+    const std::filesystem::path reportPath = std::filesystem::absolute("report.html");
+    if (report::writeHtml(reportPath.string(), logger.capturedLines(), "ros_sim 运行可视化报告")) {
+        std::cout << "  已生成: " << reportPath.string() << "\n";
+#ifdef _WIN32
+        // Windows 下直接拉起默认浏览器；其他平台只打印路径，避免无桌面环境报错
+        const std::string openCmd = "start \"\" \"" + reportPath.string() + "\"";
+        std::system(openCmd.c_str());
+#endif
+    } else {
+        std::cout << "  报告生成失败：当前目录不可写\n";
+    }
 
     std::cout << "\n演示结束。详细日志见 logs/ros_sim.log\n";
     logger.closeFileSink();
