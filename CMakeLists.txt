@@ -16,6 +16,9 @@ if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
+    # 源文件与字符串字面量统一按 UTF-8 处理：Windows 下若编译器按本地代码页解释，
+    # 生成的中文（日志、报告页面）会变成乱码。
+    add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
 endif()
 
 # ---------------------------------------------------------------- 核心静态库

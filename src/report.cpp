@@ -511,6 +511,9 @@ bool writeHtml(const std::string& htmlPath,
     if (!out.is_open()) {
         return false;
     }
+    // 写 UTF-8 BOM：Windows 上某些浏览器/编辑器会按系统默认编码（GBK）猜测，
+    // 带上 BOM 后一律按 UTF-8 解析，避免打开即乱码。
+    out << "\xEF\xBB\xBF";
     out << html;
     out.flush();
     return out.good();
