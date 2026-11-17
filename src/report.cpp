@@ -180,6 +180,8 @@ h1{margin:0;font-size:23px;font-weight:600;letter-spacing:.02em}
 .chip[data-level="WARN"][aria-pressed="true"]{color:var(--warn);border-color:#4a3a1e}
 .chip[data-level="INFO"][aria-pressed="true"]{color:var(--info);border-color:#26404d}
 .chip[data-level="SENSOR"][aria-pressed="true"]{color:var(--ok);border-color:#3a4a33}
+.chip.dl{border-color:#2d404d;color:#a9c6d6}
+.chip.dl:hover{border-color:#3d5464;color:#e5edf3;background:var(--panel-2)}
 .search{flex:1;min-width:150px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:5px 9px;font-size:12.5px;border-radius:2px}
 .search:focus{outline:1px solid #3d5464;outline-offset:0}
 .events{max-height:660px;overflow:auto}
@@ -267,6 +269,7 @@ footer .mono{font-family:var(--mono)}
         <button class="chip" data-level="ERROR" aria-pressed="false">ERROR</button>
         <button class="chip" data-level="SENSOR" aria-pressed="false">传感器</button>
         <input class="search" id="q" type="search" placeholder="搜索节点名、话题、错误码…">
+        <button class="chip dl" id="dl-now" type="button">下载当前分类日志</button>
       </div>
       <div class="events">
         <table>
@@ -292,7 +295,8 @@ footer .mono{font-family:var(--mono)}
   </div>
 
   <div class="panel sen">
-    <h2>传感器数据 <span>取自 SensorMessage（温度 / 湿度）</span></h2>
+    <h2>传感器数据 <span>取自 SensorMessage（温度 / 湿度）</span>
+      <button class="chip dl" id="dl-sen" type="button">下载温湿度日志</button></h2>
     <div class="body">
       <div class="readouts">
         <div class="ro tt"><div class="rv" id="ro-t">—</div><div class="rl">最新温度 ℃</div></div>
@@ -328,7 +332,8 @@ footer .mono{font-family:var(--mono)}
   </div>
 
   <div class="panel exc">
-    <h2>异常拦截清单 <span id="exc-count">—</span></h2>
+    <h2>异常拦截清单 <span id="exc-count">—</span>
+      <button class="chip dl" id="dl-exc" type="button">下载异常日志</button></h2>
     <div class="events">
       <table>
         <colgroup><col style="width:96px"><col style="width:74px"><col style="width:122px"><col></colgroup>
@@ -453,11 +458,16 @@ let query = '';
 const rowsHost = document.getElementById('rows');
 const evCount = document.getElementById('ev-count');
 
-function renderRows() {
+/// 当前分类 + 搜索词的过滤结果：渲染和导出共用同一套规则，导出时实时计算
+function currentRows() {
   const q = query.trim().toLowerCase();
-  const list = DATA.filter(e =>
+  return DATA.filter(e =>
     (level === 'all' ? true : (level === 'SENSOR' ? e.s === 1 : e.l === level)) &&
     (!q || (e.x + ' ' + e.m + ' ' + e.c).toLowerCase().includes(q)));
+}
+
+function renderRows() {
+  const list = currentRows();
   evCount.textContent = `显示 ${list.length} / ${DATA.length} 条`;
   rowsHost.innerHTML = list.map(e =>
     `<tr><td class="t">${e.t.slice(11)}</td><td class="lv ${e.l}">${e.l}</td><td class="mod">${e.m}</td><td class="cd">${e.c}</td><td>${e.x}</td></tr>`
@@ -465,10 +475,11 @@ function renderRows() {
 }
 renderRows();
 
-document.querySelectorAll('.chip').forEach(chip => {
+// 只有带 data-level 的筛选按钮参与分类切换；下载按钮同样是 .chip 样式，必须排除
+document.querySelectorAll('.chip[data-level]').forEach(chip => {
   chip.addEventListener('click', () => {
     level = chip.dataset.level;
-    document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+    document.querySelectorAll('.chip[data-level]').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
     renderRows();
   });
 });
@@ -497,6 +508,7 @@ document.getElementById('q').addEventListener('input', ev => {
   document.getElementById('ro-r').textContent = tMin.toFixed(1) + ' ~ ' + tMax.toFixed(1);
   drawSpark(document.getElementById('ch-t'), samples.map(e => e.tc), '#d9a441');
   drawSpark(document.getElementById('ch-h'), samples.map(e => e.hc), '#7fb2c8');
+  document.getElementById('dl-sen').addEventListener('click', () => downloadLogs(samples, '温湿度日志'));
   document.getElementById('sen-rows').innerHTML = samples.map(e => {
     const t = topicOf(e.x);
     return '<tr><td class="t">' + e.t.slice(11) + '</td><td class="cd">' + e.tc.toFixed(1) +
@@ -526,10 +538,43 @@ function drawSpark(svg, values, color) {
       '" r="1.2" fill="' + color + '"/>').join('');
 }
 
+// ---------- 日志下载 ----------
+const LEVEL_NAME = {all: '全部日志', INFO: 'INFO日志', WARN: 'WARN日志', ERROR: 'ERROR日志', SENSOR: '温湿度日志'};
+
+/// 还原成与终端一致的原始日志行
+function toRawLine(e) {
+  const code = e.c ? '[' + e.c + '] ' : '';
+  return '[' + e.t + '][' + e.l + '][' + e.m + '] ' + code + e.x;
+}
+
+/// 生成 .txt（带 UTF-8 BOM，双击用记事本打开不乱码）
+function downloadLogs(rows, label) {
+  if (!rows.length) { alert('当前分类「' + label + '」没有日志可导出，请先切到有数据的分类'); return; }
+  const text = '\uFEFF' + rows.map(toRawLine).join('\r\n') + '\r\n';
+  const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+    const stamp = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stampText = stamp.getFullYear() + pad(stamp.getMonth() + 1) + pad(stamp.getDate()) +
+    '_' + pad(stamp.getHours()) + pad(stamp.getMinutes()) + pad(stamp.getSeconds());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ros_sim_' + label + '_' + stampText + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+document.getElementById('dl-now').addEventListener('click', () => {
+  downloadLogs(currentRows(), LEVEL_NAME[level] || '日志');
+});
+
 // ---------- 异常清单 ----------
 (function renderExc() {
   const errors = DATA.filter(e => e.l === 'ERROR');
   document.getElementById('exc-count').textContent = errors.length ? `${errors.length} 项` : '无';
+  document.getElementById('dl-exc').addEventListener('click', () => downloadLogs(errors, '异常日志'));
   document.getElementById('exc').innerHTML = errors.length
     ? errors.map(e => `<tr><td class="t">${e.t.slice(11)}</td><td class="mod">${e.m}</td><td class="cd"><span class="tag">${e.c}</span></td><td>${e.x}</td></tr>`).join('')
     : '<tr><td colspan="4" class="empty">本次运行没有触发异常拦截</td></tr>';
