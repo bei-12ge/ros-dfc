@@ -62,7 +62,7 @@ ros_sim/
 4. 底部状态栏把 **Launch target** 设为 `ros_demo`，按 `F5` 即可断点调试；改成 `ros_tests` 再按 `F5` 就能单步看测试；
 5. 快捷键：`Ctrl+Shift+B` 构建，`Ctrl+Shift+P → Tasks: Run Task → 运行全部测试 (ctest)` 跑测试。
 
-仓库已内置 `.vscode/tasks.json`、`launch.json`、`c_cpp_properties.json`、`settings.json` 与 `CMakePresets.json`（release / debug / asan 三套预设），无需手动填配置。
+仓库已内置 `.vscode/tasks.json`、`launch.json`、`c_cpp_properties.json`、`settings.json` 与 `CMakePresets.json.bak`（release / debug / asan 三套预设），无需手动填配置。
 
 ### Visual Studio 2022
 
@@ -77,7 +77,7 @@ ros_sim/
 2. 右上角运行配置下拉框里会自动出现 `ros_demo` 和 `ros_tests` 两个目标，选 `ros_demo` 点绿色三角（`Shift+F10`）运行，选 `ros_tests` 运行测试；
 3. 断点调试：选 `ros_demo` 点虫子图标（`Shift+F9`）；
 4. 工具链要求：`Settings → Build, Execution, Deployment → Toolchains` 里要有一个可用的 C++ 工具链——Linux 用系统 GCC、macOS 用 Xcode CLT、Windows 用 MinGW-w64 或 Visual Studio（**不要**旧的 Cygwin）；
-5. 若 CLion 版本低于 2022.3，不会读取 `CMakePresets.json`，会用自己的 `cmake-build-debug` 配置，同样能编译运行，不影响；
+5. 若 CLion 版本低于 2022.3，不会读取 `CMakePresets.json.bak`，会用自己的 `cmake-build-debug` 配置，同样能编译运行，不影响；
 6. 工作目录：CLion 默认在构建目录下运行，日志会写到 `cmake-build-debug/logs/`。想让它落在工程根目录，在 `Run → Edit Configurations` 里把 `Working directory` 改成 `$ProjectFileDir$`。
 
 > Windows 上的两点提醒：本工程只用了标准库，但 `std::filesystem` 在 MinGW 里需要 gcc 8 以上；CMakeLists 已按编译器分支设置警告选项（MSVC 用 `/W4 /utf-8`，GCC/Clang 用 `-Wall -Wextra -Wpedantic`），因此 MSVC 工具链也能零警告编译。
@@ -87,7 +87,7 @@ ros_sim/
 | 现象 | 原因与处理 |
 | --- | --- |
 | 头文件 `ros/ros_sim.h` 报红 | 未以文件夹方式打开，或没配置成功；`C/C++` 扩展会通过 `CMake Tools` 自动取 `include/`，重新配置一次即可 |
-| 提示找不到 `msvc` 生成器 / 无法选择工具链 | Windows 装 “使用 C++ 的桌面开发” 工作负载；或改用 VS Code + MinGW（`CMakePresets.json` 不锁定生成器，会自动适配） |
+| 提示找不到 `msvc` 生成器 / 无法选择工具链 | Windows 装 “使用 C++ 的桌面开发” 工作负载；或改用 VS Code + MinGW（`CMakePresets.json.bak` 不锁定生成器，会自动适配） |
 | 终端中文乱码 | 程序启动时已调用 `SetConsoleOutputCP(CP_UTF8)` 把 Windows 控制台切到 UTF-8，源码与日志都是 UTF-8，正常情况下不会再乱。若 IDE 仍显示乱码，是 IDE 自己的解码问题：CLion 在 `Help → Edit Custom VM Options` 加一行 `-Dfile.encoding=UTF-8` 后重启；旧版控制台可手动 `chcp 65001` |
 | ERROR 日志跑到最前面、与正常输出错位 | 已修复：日志写 stderr 前先 flush stdout、写完立即 flush。若用旧版本代码仍出现，是把 stdout/stderr 重定向到同一文件再合并显示造成的，属预期 |
 | 运行后看不到 `logs/ros_sim.log` | 工作目录不对。VS Code 的 `launch.json` 已设 `cwd=${workspaceFolder}`；VS 下请把调试工作目录设为工程根目录 |
