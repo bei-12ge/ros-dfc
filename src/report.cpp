@@ -4,6 +4,8 @@
 
 #include <cstddef>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -101,6 +103,45 @@ bool isErrorCode(const std::string& text) {
     return seenDash && seenDigit;
 }
 
+/// 保留一位小数的定点文本，用于把温湿度写进 JSON 数字
+std::string fixed1(double value) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << value;
+    return oss.str();
+}
+
+/// 从 "温度=26.5℃" 这类片段里取出数字；找不到返回 false
+bool readNumberAfter(const std::string& text, const std::string& key, double& value) {
+    const size_t keyPos = text.find(key);
+    if (keyPos == std::string::npos) {
+        return false;
+    }
+    size_t i = keyPos + key.size();
+    if (i < text.size() && (text[i] == '+' || text[i] == '-')) {
+        ++i;
+    }
+    bool seenDigit = false;
+    bool seenDot = false;
+    while (i < text.size()) {
+        const char ch = text[i];
+        if (ch >= '0' && ch <= '9') {
+            seenDigit = true;
+            ++i;
+        } else if (ch == '.' && !seenDot) {
+            seenDot = true;
+            ++i;
+        } else {
+            break;
+        }
+    }
+    if (!seenDigit) {
+        return false;
+    }
+    std::istringstream iss(text.substr(keyPos + key.size(), i - keyPos - key.size()));
+    iss >> value;
+    return !iss.fail();
+}
+
 const char* const kHtmlTemplate = R"HTML(<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -138,6 +179,7 @@ h1{margin:0;font-size:23px;font-weight:600;letter-spacing:.02em}
 .chip[data-level="ERROR"][aria-pressed="true"]{color:var(--err);border-color:#4b2b28}
 .chip[data-level="WARN"][aria-pressed="true"]{color:var(--warn);border-color:#4a3a1e}
 .chip[data-level="INFO"][aria-pressed="true"]{color:var(--info);border-color:#26404d}
+.chip[data-level="SENSOR"][aria-pressed="true"]{color:var(--ok);border-color:#3a4a33}
 .search{flex:1;min-width:150px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:5px 9px;font-size:12.5px;border-radius:2px}
 .search:focus{outline:1px solid #3d5464;outline-offset:0}
 .events{max-height:660px;overflow:auto}
@@ -175,12 +217,26 @@ td.mod{color:#8b9db0;font-size:11.5px}
 .tag{font-family:var(--mono);font-size:11px;padding:2px 7px;border:1px solid #4b2b28;color:var(--err);white-space:nowrap}
 .svc{margin-top:18px}
 .svc .topic .pill{border-color:#4b3d24;color:#e2c99a}
+.sen{margin-top:18px}
+.sen .body{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:20px;padding:14px 16px 12px}
+.readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ro{border:1px solid #1d2831;background:var(--panel-2);padding:10px 12px;min-width:0}
+.rv{font-family:var(--mono);font-size:21px;line-height:1.15;color:#e5edf3}
+.ro.tt .rv{color:var(--warn)}
+.ro.hu .rv{color:var(--info)}
+.rl{margin-top:4px;font-size:11.5px;color:var(--dim)}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0}
+.chartbox{min-width:0}
+.chartbox .cap{margin-bottom:6px}
+.chartbox svg{width:100%;height:92px;display:block;border:1px solid #1d2831;background:#121a20}
 footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
 footer .mono{font-family:var(--mono)}
 @media (max-width:1080px){
   .main{grid-template-columns:minmax(0,1fr)}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tcols{grid-template-columns:minmax(0,1fr)}
+  .sen .body{grid-template-columns:minmax(0,1fr)}
+  .charts{grid-template-columns:minmax(0,1fr)}
 }
 </style>
 </head>
@@ -209,6 +265,7 @@ footer .mono{font-family:var(--mono)}
         <button class="chip" data-level="INFO" aria-pressed="false">INFO</button>
         <button class="chip" data-level="WARN" aria-pressed="false">WARN</button>
         <button class="chip" data-level="ERROR" aria-pressed="false">ERROR</button>
+        <button class="chip" data-level="SENSOR" aria-pressed="false">传感器</button>
         <input class="search" id="q" type="search" placeholder="搜索节点名、话题、错误码…">
       </div>
       <div class="events">
@@ -231,6 +288,37 @@ footer .mono{font-family:var(--mono)}
         <h2>模块事件分布 <span>按日志来源统计</span></h2>
         <div class="mods" id="mods"></div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel sen">
+    <h2>传感器数据 <span>取自 SensorMessage（温度 / 湿度）</span></h2>
+    <div class="body">
+      <div class="readouts">
+        <div class="ro tt"><div class="rv" id="ro-t">—</div><div class="rl">最新温度 ℃</div></div>
+        <div class="ro hu"><div class="rv" id="ro-h">—</div><div class="rl">最新湿度 %</div></div>
+        <div class="ro"><div class="rv" id="ro-n">0</div><div class="rl">有效采样点</div></div>
+        <div class="ro"><div class="rv" id="ro-r">—</div><div class="rl">温度区间 ℃</div></div>
+      </div>
+      <div class="charts">
+        <div class="chartbox">
+          <div class="cap">温度趋势</div>
+          <svg id="ch-t" viewBox="0 0 100 40" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chartbox">
+          <div class="cap">湿度趋势</div>
+          <svg id="ch-h" viewBox="0 0 100 40" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+    </div>
+    <div class="events" style="max-height:300px">
+      <table>
+        <colgroup>
+          <col style="width:96px"><col style="width:92px"><col style="width:92px"><col style="width:190px"><col>
+        </colgroup>
+        <thead><tr><th>时间</th><th>温度 ℃</th><th>湿度 %</th><th>话题</th><th>内容</th></tr></thead>
+        <tbody id="sen-rows"></tbody>
+      </table>
     </div>
   </div>
 
@@ -368,7 +456,7 @@ const evCount = document.getElementById('ev-count');
 function renderRows() {
   const q = query.trim().toLowerCase();
   const list = DATA.filter(e =>
-    (level === 'all' || e.l === level) &&
+    (level === 'all' ? true : (level === 'SENSOR' ? e.s === 1 : e.l === level)) &&
     (!q || (e.x + ' ' + e.m + ' ' + e.c).toLowerCase().includes(q)));
   evCount.textContent = `显示 ${list.length} / ${DATA.length} 条`;
   rowsHost.innerHTML = list.map(e =>
@@ -388,6 +476,55 @@ document.getElementById('q').addEventListener('input', ev => {
   query = ev.target.value;
   renderRows();
 });
+
+// ---------- 传感器面板 ----------
+(function renderSensor() {
+  const samples = DATA.filter(e => e.s === 1 && typeof e.tc === 'number' && typeof e.hc === 'number');
+  if (!samples.length) {
+    document.getElementById('ro-n').textContent = '0';
+    document.getElementById('sen-rows').innerHTML =
+      '<tr><td colspan="5" class="empty">本次运行没有带温湿度数值的采样点</td></tr>';
+    drawSpark(document.getElementById('ch-t'), [], '#d9a441');
+    drawSpark(document.getElementById('ch-h'), [], '#7fb2c8');
+    return;
+  }
+  const last = samples[samples.length - 1];
+  document.getElementById('ro-t').textContent = last.tc.toFixed(1);
+  document.getElementById('ro-h').textContent = last.hc.toFixed(1);
+  document.getElementById('ro-n').textContent = samples.length;
+  const tMin = Math.min(...samples.map(e => e.tc));
+  const tMax = Math.max(...samples.map(e => e.tc));
+  document.getElementById('ro-r').textContent = tMin.toFixed(1) + ' ~ ' + tMax.toFixed(1);
+  drawSpark(document.getElementById('ch-t'), samples.map(e => e.tc), '#d9a441');
+  drawSpark(document.getElementById('ch-h'), samples.map(e => e.hc), '#7fb2c8');
+  document.getElementById('sen-rows').innerHTML = samples.map(e => {
+    const t = topicOf(e.x);
+    return '<tr><td class="t">' + e.t.slice(11) + '</td><td class="cd">' + e.tc.toFixed(1) +
+      '</td><td class="cd">' + e.hc.toFixed(1) + '</td><td class="mod">' + t +
+      '</td><td>' + e.x + '</td></tr>';
+  }).join('');
+})();
+
+/// 极简折线：数据点按序连成折线，纵轴按本组数据 min~max 自适应
+function drawSpark(svg, values, color) {
+  if (!values.length) {
+    svg.innerHTML = '<text x="50" y="21" text-anchor="middle" fill="#63767f" font-size="4">无采样数据</text>';
+    return;
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = (max - min) || 1;
+  const points = values.map((v, i) => {
+    const x = values.length === 1 ? 50 : (i / (values.length - 1)) * 96 + 2;
+    const y = 36 - ((v - min) / span) * 30;
+    return { x: x, y: y };
+  });
+  svg.innerHTML =
+    '<polyline points="' + points.map(p => p.x.toFixed(2) + ',' + p.y.toFixed(2)).join(' ') +
+    '" fill="none" stroke="' + color + '" stroke-width="0.9" stroke-linejoin="round"/>' +
+    points.map(p => '<circle cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) +
+      '" r="1.2" fill="' + color + '"/>').join('');
+}
 
 // ---------- 异常清单 ----------
 (function renderExc() {
@@ -480,7 +617,23 @@ bool writeHtml(const std::string& htmlPath,
         data += "\",\"l\":\"" + jsonEscape(line.level);
         data += "\",\"m\":\"" + jsonEscape(line.module);
         data += "\",\"c\":\"" + jsonEscape(line.code);
-        data += "\",\"x\":\"" + jsonEscape(line.message) + "\"}";
+        // 传感器消息：日志里带 "sensor_msgs/SensorData"，发布行还带具体温湿度读数
+        const bool sensor = line.message.find("SensorData") != std::string::npos;
+        double temp = 0.0;
+        double humidity = 0.0;
+        const bool hasTemp = sensor && readNumberAfter(line.message, "温度=", temp);
+        const bool hasHumidity = sensor && readNumberAfter(line.message, "湿度=", humidity);
+        data += "\",\"x\":\"" + jsonEscape(line.message) + "\"";
+        if (sensor) {
+            data += ",\"s\":1";
+        }
+        if (hasTemp) {
+            data += ",\"tc\":" + fixed1(temp);
+        }
+        if (hasHumidity) {
+            data += ",\"hc\":" + fixed1(humidity);
+        }
+        data += "}";
     }
     data.push_back(']');
 
